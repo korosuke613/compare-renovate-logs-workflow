@@ -1,0 +1,146 @@
+name: Compare Renovate logs
+
+on:
+  workflow_call:
+    inputs:
+      renovate-config-file:
+        type: string
+        required: false
+        default: "renovate.json"
+
+env:
+  RENOVATE_USERNAME: renovate[bot]
+  RENOVATE_GIT_AUTHOR: renovate[bot] <29139614+renovate[bot]@users.noreply.github.com>
+  RENOVATE_TOKEN: ${{ github.token }}
+  DEFAULT_BRANCH_LOG_FILE_NAME: renovate-default-branch-json
+  TOPIC_BRANCH_LOG_FILE_NAME: renovate-topic-branch-json
+
+jobs:
+  setup:
+    name: Setup
+    runs-on: ubuntu-latest
+    outputs:
+      major-version: ${{ steps.version.outputs.renovate }}
+    steps:
+      - name: Get latest major renovate version
+        id: version
+        run: |
+          echo "renovate=$(npm show renovate version --no-update-notifier | cut -d . -f 1)" >> $GITHUB_OUTPUT
+
+  generate-logs-for-default-branch:
+    name: Generate logs for default branch
+    runs-on: ubuntu-latest
+    needs: setup
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: main
+      - uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: npm-renovate-major-v${{ needs.version.outputs.major-version }}
+      - env:
+          LOG_LEVEL: debug
+          LOG_FORMAT: json
+          RENOVATE_CONFIG_FILE: ${{ inputs.renovate-config-file }}
+        run: |
+          npx renovate --schedule= --dry-run ${{ github.repository }} \
+            > ${{ runner.temp }}/${{ env.DEFAULT_BRANCH_LOG_FILE_NAME }}.log
+          cat ${{ runner.temp }}/${{ env.DEFAULT_BRANCH_LOG_FILE_NAME }}.log
+      - uses: actions/upload-artifact@v3
+        with:
+          name: default-branch-log
+          path: |
+            ${{ runner.temp }}/${{ env.DEFAULT_BRANCH_LOG_FILE_NAME }}.log
+
+  generate-logs-for-topic-branch:
+    name: Generate logs for topic branch
+    runs-on: ubuntu-latest
+    needs: setup
+    env:
+      OVERRIDE_RENOVATE_CONFIG: |
+        const fs = require('fs');
+        const configFilePath = "${{ inputs.renovate-config-file }}";
+        const configFileText = fs.readFileSync(configFilePath, "utf8");
+        module.exports = {
+          "dryRun": "full",
+          "fetchReleaseNotes": false,
+          "requireConfig": "ignored",
+          "force": {
+            ...JSON.parse(configFileText)
+          }
+        };
+      OVERRIDE_RENOVATE_CONFIG_FILE_NAME: override-renovate-config.js
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: npm-renovate-major-v${{ needs.setup.outputs.major-version }}
+      - run: |
+          printenv OVERRIDE_RENOVATE_CONFIG > ${{ runner.temp }}/${{ env.OVERRIDE_RENOVATE_CONFIG_FILE_NAME }}
+      - env:
+          LOG_LEVEL: debug
+          LOG_FORMAT: json
+          RENOVATE_CONFIG_FILE: ${{ runner.temp }}/${{ env.OVERRIDE_RENOVATE_CONFIG_FILE_NAME }}
+        run: |
+          npx renovate --schedule= --dry-run ${{ github.repository }} \
+            > ${{ runner.temp }}/${{ env.TOPIC_BRANCH_LOG_FILE_NAME }}.log
+          cat ${{ runner.temp }}/${{ env.TOPIC_BRANCH_LOG_FILE_NAME }}.log
+      - uses: actions/upload-artifact@v3
+        with:
+          name: topic-branch-log
+          path: |
+            ${{ runner.temp }}/${{ env.TOPIC_BRANCH_LOG_FILE_NAME }}.log
+
+  compare-renovate-logs:
+    name: Compare renovate logs
+    runs-on: ubuntu-latest
+    needs:
+      - generate-logs-for-default-branch
+      - generate-logs-for-topic-branch
+    env:
+      DENO_DIR: my_cache_directory
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/download-artifact@v3
+        with:
+          path: ${{ runner.temp }}
+
+      - run: |
+          ls -R ${{ runner.temp }}/default-branch-log
+          ls -R ${{ runner.temp }}/topic-branch-log
+
+      - name: Cache Deno dependencies
+        uses: actions/cache@v3
+        with:
+          path: ${{ env.DENO_DIR }}
+          key: ${{ runner.os }}-v1
+          restore-keys: |
+            ${{ runner.os }}-
+
+      - uses: denoland/setup-deno@v1.1.1
+        with:
+          deno-version: v1.x
+
+      - name: Analyze renovate logs
+        run: |
+          deno run --allow-read --allow-write https://deno.land/x/analyze_renovate_log@0.0.3/cli.ts -o -f ${{ runner.temp }}/default-branch-log/${{ env.DEFAULT_BRANCH_LOG_FILE_NAME }}.log
+          deno run --allow-read --allow-write https://deno.land/x/analyze_renovate_log@0.0.3/cli.ts -o -f ${{ runner.temp }}/topic-branch-log/${{ env.TOPIC_BRANCH_LOG_FILE_NAME }}.log
+          ls ./dist
+
+      - name: Compare renovate logs
+        run: |
+          diff -u ./dist/${{ env.DEFAULT_BRANCH_LOG_FILE_NAME }}.json ./dist/${{ env.TOPIC_BRANCH_LOG_FILE_NAME }}.json >> diff_result || true
+          echo "## Compare result" >> $GITHUB_STEP_SUMMARY
+          echo '```diff' >> $GITHUB_STEP_SUMMARY
+          cat diff_result >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: analyze-renovate-log-results
+          path: |
+            ./dist/${{ env.DEFAULT_BRANCH_LOG_FILE_NAME }}.json
+            ./dist/${{ env.TOPIC_BRANCH_LOG_FILE_NAME }}.json

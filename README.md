@@ -1,2 +1,2 @@
-# compare-renovate-logs-action
-Compare Renovate logs for GitHub Action
+# compare-renovate-logs-workflow
+Compare Renovate logs for GitHub Actions reusable workflow.
