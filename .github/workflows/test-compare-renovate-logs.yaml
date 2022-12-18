@@ -1,0 +1,13 @@
+name: Test Compare Renovate logs
+
+on:
+  push:
+    paths:
+      - .github/workflows/compare-renovate-logs.yaml
+      - .github/workflows/test-compare-renovate-logs.yaml
+
+jobs:
+  test-compare-renovate-logs:
+    uses: ./.github/workflows/compare-renovate-logs.yaml
+    with:
+      renovate-config-file: renovate.json
