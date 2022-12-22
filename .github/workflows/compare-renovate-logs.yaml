@@ -44,7 +44,7 @@ jobs:
           LOG_FORMAT: json
           RENOVATE_CONFIG_FILE: ${{ inputs.renovate-config-file }}
         run: |
-          npx renovate --schedule= --dry-run ${{ github.repository }} \
+          npx renovate --schedule= --require-config=ignored --dry-run ${{ github.repository }} \
             > ${{ runner.temp }}/${{ env.DEFAULT_BRANCH_LOG_FILE_NAME }}.log
           cat ${{ runner.temp }}/${{ env.DEFAULT_BRANCH_LOG_FILE_NAME }}.log
       - uses: actions/upload-artifact@v3
@@ -57,34 +57,18 @@ jobs:
     name: Generate logs for topic branch
     runs-on: ubuntu-latest
     needs: setup
-    env:
-      OVERRIDE_RENOVATE_CONFIG: |
-        const fs = require('fs');
-        const configFilePath = "${{ inputs.renovate-config-file }}";
-        const configFileText = fs.readFileSync(configFilePath, "utf8");
-        module.exports = {
-          "dryRun": "full",
-          "fetchReleaseNotes": false,
-          "requireConfig": "ignored",
-          "force": {
-            ...JSON.parse(configFileText)
-          }
-        };
-      OVERRIDE_RENOVATE_CONFIG_FILE_NAME: override-renovate-config.js
     steps:
       - uses: actions/checkout@v3
       - uses: actions/cache@v3
         with:
           path: ~/.npm
           key: npm-renovate-major-v${{ needs.setup.outputs.major-version }}
-      - run: |
-          printenv OVERRIDE_RENOVATE_CONFIG > ${{ runner.temp }}/${{ env.OVERRIDE_RENOVATE_CONFIG_FILE_NAME }}
       - env:
           LOG_LEVEL: debug
           LOG_FORMAT: json
-          RENOVATE_CONFIG_FILE: ${{ runner.temp }}/${{ env.OVERRIDE_RENOVATE_CONFIG_FILE_NAME }}
+          RENOVATE_CONFIG_FILE: ${{ inputs.renovate-config-file }}
         run: |
-          npx renovate --schedule= --dry-run ${{ github.repository }} \
+          npx renovate --schedule= --require-config=ignored --dry-run ${{ github.repository }} \
             > ${{ runner.temp }}/${{ env.TOPIC_BRANCH_LOG_FILE_NAME }}.log
           cat ${{ runner.temp }}/${{ env.TOPIC_BRANCH_LOG_FILE_NAME }}.log
       - uses: actions/upload-artifact@v3
