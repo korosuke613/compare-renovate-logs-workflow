@@ -1,0 +1,26 @@
+name: Tagging and Release
+run-name: Tagging ${{ inputs.version }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        type: string
+        description: "Tagging version (ex: v1.0.1)"
+        required: true
+      isMajorVersion:
+        type: boolean
+        description: If true, it will update the MAJOR version of the tag.
+        default: true
+      isRelease:
+        type: boolean
+        description: If true, it will create a GitHub Release
+        default: true
+
+jobs:
+  call:
+    uses: korosuke613/actions/.github/workflows/tagging.yaml@v1
+    with:
+      version: ${{ inputs.version }}
+      isMajorVersion: ${{ inputs.isMajorVersion }}
+      isRelease: ${{ inputs.isRelease }}
