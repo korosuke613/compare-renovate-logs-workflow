@@ -97,3 +97,9 @@ jobs:
     with:
       renovate-config-file: renovate.json
 ```
+
+## Release
+1. Open [Tagging and Release action page](https://github.com/korosuke613/compare-renovate-logs-workflow/actions/workflows/tagging.yaml).
+2. Click `Run workflow`.
+3. Input version.
+4. Click `Run workflow`.
