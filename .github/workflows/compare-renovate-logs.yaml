@@ -35,7 +35,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: main
-      - uses: actions/cache@v3
+      - uses: actions/cache@v4
         with:
           path: ~/.npm
           key: npm-renovate-major-v${{ needs.version.outputs.major-version }}
@@ -59,7 +59,7 @@ jobs:
     needs: setup
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/cache@v3
+      - uses: actions/cache@v4
         with:
           path: ~/.npm
           key: npm-renovate-major-v${{ needs.setup.outputs.major-version }}
@@ -97,7 +97,7 @@ jobs:
           ls -R ${{ runner.temp }}/topic-branch-log
 
       - name: Cache Deno dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ${{ env.DENO_DIR }}
           key: ${{ runner.os }}-v1
