@@ -104,7 +104,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-
 
-      - uses: denoland/setup-deno@v1.1.1
+      - uses: denoland/setup-deno@v1.1.4
         with:
           deno-version: v1.x
 
