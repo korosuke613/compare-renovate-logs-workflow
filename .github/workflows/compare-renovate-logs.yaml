@@ -43,7 +43,7 @@ jobs:
       #   Because Renovate may require more than the default Node.js version of GitHub Actions.
       #   see: https://github.com/cybozu/renovate-dry-run-action/issues/26
       - name: Setup LTS Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: lts/*
       - env:
@@ -74,7 +74,7 @@ jobs:
       #   Because Renovate may require more than the default Node.js version of GitHub Actions.
       #   see: https://github.com/cybozu/renovate-dry-run-action/issues/26
       - name: Setup LTS Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: lts/*
       - env:
