@@ -120,7 +120,7 @@ jobs:
 
       - uses: denoland/setup-deno@v1.1.1
         with:
-          deno-version: v1.x
+          deno-version: 2.x
 
       - name: Analyze renovate logs
         run: |
