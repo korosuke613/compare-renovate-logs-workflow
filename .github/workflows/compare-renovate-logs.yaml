@@ -54,7 +54,7 @@ jobs:
           npx renovate --schedule= --require-config=ignored --dry-run ${{ github.repository }} \
             > ${{ runner.temp }}/${{ env.DEFAULT_BRANCH_LOG_FILE_NAME }}.log
           cat ${{ runner.temp }}/${{ env.DEFAULT_BRANCH_LOG_FILE_NAME }}.log
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: default-branch-log
           path: |
@@ -85,7 +85,7 @@ jobs:
           npx renovate --schedule= --require-config=ignored --dry-run ${{ github.repository }} \
             > ${{ runner.temp }}/${{ env.TOPIC_BRANCH_LOG_FILE_NAME }}.log
           cat ${{ runner.temp }}/${{ env.TOPIC_BRANCH_LOG_FILE_NAME }}.log
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: topic-branch-log
           path: |
@@ -102,7 +102,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           path: ${{ runner.temp }}
 
@@ -136,7 +136,7 @@ jobs:
           cat diff_result >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: analyze-renovate-log-results
           path: |
